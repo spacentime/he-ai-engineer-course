@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Open-Meteo City Weather</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h1 class="card-title text-primary">Open-Meteo City Weather</h1>
+                <p class="card-text">Select a city and click <strong>Get Weather</strong> to view temperature and humidity without leaving the page.</p>
+                <form id="weather-form" action="/weather" method="get">
+                    <div class="mb-3">
+                        <label for="city" class="form-label">City</label>
+                        <select id="city" name="city" class="form-select">
+                            {options}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Get Weather</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="weather-result" class="card shadow-sm d-none">
+            <div class="card-body">
+                <h2 class="card-title text-primary">Weather Result</h2>
+                <div id="result-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('weather-form');
+        const resultCard = document.getElementById('weather-result');
+        const resultContent = document.getElementById('result-content');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const city = document.getElementById('city').value;
+            resultContent.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div> Loading...';
+            resultCard.classList.remove('d-none');
+
+            try {
+                const response = await fetch(`/weather?city=${encodeURIComponent(city)}`);
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null);
+                    throw new Error(errorData?.error || `Server returned ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.error) {
+                    resultContent.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                    return;
+                }
+
+                resultContent.innerHTML = `
+                    <p><strong>City:</strong> ${data.city}</p>
+                    <p><strong>Coordinates:</strong> ${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}</p>
+                    <p><strong>Observation time:</strong> ${data.observation_time}</p>
+                    <p><strong>Temperature:</strong> ${data.temperature.toFixed(1)} °C</p>
+                    <p><strong>Humidity:</strong> ${data.humidity.toFixed(1)} %</p>
+                `;
+            } catch (error) {
+                resultContent.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>
